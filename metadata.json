@@ -1,0 +1,8 @@
+{
+  "name": "Mehrana Wears",
+  "description": "Discover curated premium clothing, modest fashion, kurtas, and luxury everyday apparel with seamless shopping and admin store management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
