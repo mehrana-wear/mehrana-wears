@@ -55,6 +55,8 @@ export interface User {
   name: string;
   email: string;
   avatar?: string;
+  authProvider?: 'google' | 'email';
+  googlePhotoUrl?: string;
   role: 'admin' | 'customer';
   address?: {
     street: string;
@@ -102,6 +104,33 @@ export interface Order {
   status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
   trackingNumber: string;
   estimatedDelivery: string;
+  paymentDetails?: {
+    transactionId: string;
+    recipientEmail: string;
+    recipientMerchantName: string;
+    settlementStatus: 'Received & Settled' | 'Pending Deposit';
+    cardBrand?: string;
+    cardLast4?: string;
+    paidAt: string;
+    payoutDestination: string;
+  };
+}
+
+export interface MerchantPayoutSettings {
+  merchantName: string;
+  merchantEmail: string;
+  googlePayMerchantId: string;
+  businessUpiId: string;
+  bankName: string;
+  accountNumber: string;
+  accountHolder: string;
+  routingNumber: string;
+  settlementMode: 'instant' | 'daily';
+  isVerified: boolean;
+  totalWithdrawn?: number;
+  gatewayName?: 'stripe' | 'razorpay' | 'adyen' | 'braintree' | 'example';
+  gatewayMerchantId?: string;
+  googlePayEnvironment?: 'TEST' | 'PRODUCTION';
 }
 
 export type CurrencyCode = 'USD' | 'EUR' | 'GBP' | 'AED' | 'PKR' | 'CAD';

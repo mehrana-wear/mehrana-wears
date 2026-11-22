@@ -1,0 +1,81 @@
+{
+  "entities": {
+    "UserProfile": {
+      "collection": "users",
+      "fields": {
+        "id": { "type": "string", "description": "User UID" },
+        "name": { "type": "string", "description": "Full name" },
+        "email": { "type": "string", "description": "Email address" },
+        "avatar": { "type": "string", "description": "Avatar photo URL" },
+        "authProvider": { "type": "string", "description": "Authentication provider (google, password, email)" },
+        "role": { "type": "string", "description": "User role (customer, admin)" },
+        "phone": { "type": "string", "description": "Contact phone number" },
+        "address": {
+          "type": "object",
+          "description": "Home and delivery address",
+          "properties": {
+            "street": { "type": "string" },
+            "city": { "type": "string" },
+            "state": { "type": "string" },
+            "postalCode": { "type": "string" },
+            "country": { "type": "string" }
+          }
+        },
+        "createdAt": { "type": "string", "description": "Account creation timestamp" },
+        "updatedAt": { "type": "string", "description": "Profile update timestamp" }
+      }
+    },
+    "Product": {
+      "collection": "products",
+      "fields": {
+        "id": { "type": "string", "description": "Unique product ID" },
+        "name": { "type": "string", "description": "Product title / Dress name" },
+        "description": { "type": "string", "description": "Detailed description" },
+        "price": { "type": "number", "description": "Current selling price" },
+        "originalPrice": { "type": "number", "description": "Original crossed-out price" },
+        "category": { "type": "string", "description": "Product category" },
+        "image_url": { "type": "string", "description": "Primary product image URL" },
+        "images": { "type": "array", "description": "Gallery images" },
+        "sizes": { "type": "array", "description": "Available clothing sizes" },
+        "colors": { "type": "array", "description": "Available color variations" },
+        "fabric": { "type": "string", "description": "Fabric material details" },
+        "stock": { "type": "number", "description": "Inventory count" },
+        "isNewArrival": { "type": "boolean", "description": "New arrival flag" },
+        "isBestSeller": { "type": "boolean", "description": "Bestseller flag" },
+        "isFeatured": { "type": "boolean", "description": "Featured dress flag" },
+        "sku": { "type": "string", "description": "SKU identifier" },
+        "createdAt": { "type": "string", "description": "Creation ISO date" }
+      }
+    },
+    "Order": {
+      "collection": "orders",
+      "fields": {
+        "id": { "type": "string", "description": "Order unique ID" },
+        "orderNumber": { "type": "string", "description": "Order reference code" },
+        "date": { "type": "string", "description": "Order date string" },
+        "customer": { "type": "object", "description": "Customer details" },
+        "items": { "type": "array", "description": "Ordered line items" },
+        "subtotal": { "type": "number", "description": "Subtotal amount" },
+        "discount": { "type": "number", "description": "Discount applied" },
+        "shipping": { "type": "number", "description": "Shipping fee" },
+        "total": { "type": "number", "description": "Total paid" },
+        "status": { "type": "string", "description": "Order status (Processing, Shipped, Delivered, Cancelled)" },
+        "paymentMethod": { "type": "string", "description": "Payment type" }
+      }
+    },
+    "Review": {
+      "collection": "reviews",
+      "fields": {
+        "id": { "type": "string", "description": "Review unique ID" },
+        "productId": { "type": "string", "description": "Product ID referenced" },
+        "userName": { "type": "string", "description": "Author name" },
+        "rating": { "type": "number", "description": "Star rating 1-5" },
+        "date": { "type": "string", "description": "Review date" },
+        "title": { "type": "string", "description": "Review title" },
+        "comment": { "type": "string", "description": "Review content" },
+        "verified": { "type": "boolean", "description": "Verified buyer flag" },
+        "helpfulCount": { "type": "number", "description": "Helpful count" }
+      }
+    }
+  }
+}

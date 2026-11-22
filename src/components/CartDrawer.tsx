@@ -13,6 +13,7 @@ import {
 import { CartItem, CurrencyCode } from '../types';
 import { formatPrice } from '../utils/currency';
 import { PROMO_CODES } from '../data/initialProducts';
+import { GooglePayButton } from './GooglePaySheet';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ interface CartDrawerProps {
   onClearCart: () => void;
   currency: CurrencyCode;
   onProceedToCheckout: () => void;
+  onGooglePayCheckout?: () => void;
   appliedCoupon: string | null;
   onApplyCoupon: (code: string) => boolean;
   onRemoveCoupon: () => void;
@@ -36,6 +38,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
   onRemoveItem,
   currency,
   onProceedToCheckout,
+  onGooglePayCheckout,
   appliedCoupon,
   onApplyCoupon,
   onRemoveCoupon,
@@ -313,15 +316,38 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               </div>
             </div>
 
-            {/* Checkout Action Button */}
-            <button
-              id="cart-proceed-checkout-btn"
-              onClick={onProceedToCheckout}
-              className="w-full py-4 rounded-2xl bg-[#C17F59] hover:bg-[#A86A46] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg hover:shadow-xl transition-all group"
-            >
-              <span>Proceed to Checkout</span>
-              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-            </button>
+            {/* Express Google Pay & Standard Checkout Actions */}
+            <div className="space-y-2.5 pt-1">
+              <GooglePayButton
+                onClick={() => {
+                  if (onGooglePayCheckout) {
+                    onGooglePayCheckout();
+                  } else {
+                    onProceedToCheckout();
+                  }
+                }}
+                total={grandTotal}
+                currency={currency}
+                variant="buy"
+                className="w-full"
+              />
+
+              <div className="flex items-center gap-2 my-1">
+                <div className="h-px bg-[#E8E2D8] flex-1" />
+                <span className="text-[10px] font-semibold text-[#A68F7A] uppercase tracking-wider">or continue with</span>
+                <div className="h-px bg-[#E8E2D8] flex-1" />
+              </div>
+
+              {/* Standard Checkout Action Button */}
+              <button
+                id="cart-proceed-checkout-btn"
+                onClick={onProceedToCheckout}
+                className="w-full py-3.5 rounded-2xl bg-[#C17F59] hover:bg-[#A86A46] text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md hover:shadow-lg transition-all group"
+              >
+                <span>Standard Delivery Checkout</span>
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
 
             <div className="flex items-center justify-center gap-2 text-[10px] text-[#A68F7A]">
               <ShieldCheck className="w-3.5 h-3.5 text-[#8A9A5B]" />

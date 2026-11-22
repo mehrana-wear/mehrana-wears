@@ -101,14 +101,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         </button>
 
         {/* Quick View Floating Button */}
-        <div className="absolute inset-x-3 bottom-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-10">
+        <div className="absolute inset-x-3 bottom-3 flex gap-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200 z-10">
           <button
             id={`quick-view-btn-${product.id}`}
             onClick={(e) => {
               e.stopPropagation();
               onQuickView(product);
             }}
-            className="flex-1 bg-white/95 backdrop-blur-xs hover:bg-white text-[#2D2D2D] text-xs font-semibold py-2.5 rounded-xl shadow-md flex items-center justify-center gap-1.5 transition-colors border border-[#E8E2D8]/60"
+            className="flex-1 bg-white/95 backdrop-blur-xs hover:bg-white text-[#2D2D2D] text-xs font-semibold py-2 sm:py-2.5 rounded-xl shadow-md flex items-center justify-center gap-1.5 transition-colors border border-[#E8E2D8]/60"
           >
             <Eye className="w-3.5 h-3.5 text-[#3F4C27]" />
             <span>Quick View</span>

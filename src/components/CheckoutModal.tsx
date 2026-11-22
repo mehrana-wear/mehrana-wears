@@ -14,6 +14,8 @@ import {
 import confetti from 'canvas-confetti';
 import { CartItem, CurrencyCode, Order, User } from '../types';
 import { formatPrice } from '../utils/currency';
+import { getStoredMerchantSettings } from '../utils/storage';
+import { GoogleGLogo, GooglePayLogo, GooglePayButton, GooglePaySheet, GooglePayConfirmData } from './GooglePaySheet';
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -23,6 +25,10 @@ interface CheckoutModalProps {
   currentUser: User | null;
   appliedCoupon: string | null;
   onOrderPlaced: (order: Order) => void;
+  initialPaymentMethod?: 'card' | 'cod' | 'googlepay';
+  initialStep?: 1 | 2 | 3;
+  autoOpenGooglePaySheet?: boolean;
+  directItems?: CartItem[];
 }
 
 export const CheckoutModal: React.FC<CheckoutModalProps> = ({
@@ -33,12 +39,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   currentUser,
   appliedCoupon,
   onOrderPlaced,
+  initialPaymentMethod = 'googlepay',
+  initialStep = 1,
+  autoOpenGooglePaySheet = false,
+  directItems,
 }) => {
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(initialStep);
 
   // Form states
   const [fullName, setFullName] = useState(currentUser?.name || 'Faruk Karim');
-  const [email, setEmail] = useState(currentUser?.email || 'customer@mehrana.com');
+  const [email, setEmail] = useState(currentUser?.email || 'farukarim@gmail.com');
   const [phone, setPhone] = useState(currentUser?.phone || '+1 (555) 234-5678');
   const [street, setStreet] = useState(currentUser?.address?.street || '742 Evergreen Terrace');
   const [city, setCity] = useState(currentUser?.address?.city || 'San Francisco');
@@ -47,7 +57,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [country, setCountry] = useState(currentUser?.address?.country || 'United States');
 
   const [deliveryMethod, setDeliveryMethod] = useState<'standard' | 'express'>('standard');
-  const [paymentMethod, setPaymentMethod] = useState<'card' | 'cod' | 'googlepay' | 'applepay' | 'paypal'>('card');
+  const [paymentMethod, setPaymentMethod] = useState<'card' | 'cod' | 'googlepay' | 'applepay' | 'paypal'>(initialPaymentMethod);
 
   // Card details
   const [cardNumber, setCardNumber] = useState('4242 •••• •••• 4242');
@@ -57,27 +67,95 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
   const [placedOrder, setPlacedOrder] = useState<Order | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showGooglePaySheet, setShowGooglePaySheet] = useState(false);
+  const [paidWithCardLast4, setPaidWithCardLast4] = useState('8842');
+
+  const activeCart = directItems && directItems.length > 0 ? directItems : cart;
+
+  // Sync with initial props and user profile
+  React.useEffect(() => {
+    if (isOpen) {
+      if (initialPaymentMethod) setPaymentMethod(initialPaymentMethod);
+      if (initialStep) setStep(initialStep);
+      if (currentUser) {
+        if (currentUser.name) {
+          setFullName(currentUser.name);
+          setCardHolder(currentUser.name);
+        }
+        if (currentUser.email) setEmail(currentUser.email);
+        if (currentUser.phone) setPhone(currentUser.phone);
+        if (currentUser.address) {
+          if (currentUser.address.street) setStreet(currentUser.address.street);
+          if (currentUser.address.city) setCity(currentUser.address.city);
+          if (currentUser.address.state) setState(currentUser.address.state);
+          if (currentUser.address.postalCode) setPostalCode(currentUser.address.postalCode);
+          if (currentUser.address.country) setCountry(currentUser.address.country);
+        }
+      }
+
+      // Automatically pop up Google Pay Sheet if requested
+      if (autoOpenGooglePaySheet || (initialPaymentMethod === 'googlepay' && initialStep === 3)) {
+        setShowGooglePaySheet(true);
+      }
+    } else {
+      setShowGooglePaySheet(false);
+    }
+  }, [isOpen, currentUser, initialPaymentMethod, initialStep, autoOpenGooglePaySheet]);
 
   if (!isOpen) return null;
 
   // Calculations
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const subtotal = activeCart.reduce((sum, item) => sum + item.price * item.qty, 0);
   const discountAmount = appliedCoupon ? (subtotal * 0.15) : 0;
   const shippingFee = deliveryMethod === 'express' ? 15.00 : (subtotal >= 120 ? 0 : 9.99);
   const tax = (subtotal - discountAmount) * 0.05;
   const grandTotal = Math.max(0, subtotal - discountAmount + shippingFee + tax);
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = (overrideMethod?: 'card' | 'cod' | 'googlepay', confirmData?: GooglePayConfirmData) => {
+    const finalMethod = overrideMethod || (paymentMethod as 'card' | 'cod' | 'googlepay');
+    const finalDeliveryMethod = confirmData?.deliveryMethod || deliveryMethod;
+    const finalAddress = confirmData?.shippingAddress || {
+      fullName,
+      email,
+      phone,
+      address: street,
+      city,
+      state,
+      postalCode,
+      country,
+    };
+
+    if (confirmData?.cardLast4) {
+      setPaidWithCardLast4(confirmData.cardLast4);
+    }
+
+    const finalShippingFee = finalDeliveryMethod === 'express' ? 15.00 : (subtotal >= 120 ? 0 : 9.99);
+    const finalGrandTotal = Math.max(0, subtotal - discountAmount + finalShippingFee + tax);
+
     setIsSubmitting(true);
+    setShowGooglePaySheet(false);
     setTimeout(() => {
       const orderNumber = `MW-${Math.floor(100000 + Math.random() * 900000)}`;
       const trackingNumber = `TRK-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
       
+      const merchantSettings = getStoredMerchantSettings();
+      const isGooglePay = finalMethod === 'googlepay';
+      const paymentDetails = isGooglePay ? {
+        transactionId: confirmData?.transactionId || `GPAY-${orderNumber}`,
+        recipientEmail: confirmData?.recipientEmail || merchantSettings.merchantEmail || 'farukarim@gmail.com',
+        recipientMerchantName: confirmData?.recipientMerchantName || merchantSettings.merchantName || 'Mehrana Wears (Faruk Karim)',
+        settlementStatus: confirmData?.settlementStatus || ('Pending Deposit' as const),
+        cardBrand: confirmData?.cardBrand || 'Google Pay UPI',
+        cardLast4: confirmData?.cardLast4 || paidWithCardLast4 || 'UPI',
+        paidAt: confirmData?.paidAt || new Date().toISOString(),
+        payoutDestination: confirmData?.payoutDestination || `UPI: ${merchantSettings.businessUpiId} (${merchantSettings.bankName})`,
+      } : undefined;
+
       const newOrder: Order = {
         id: `ord-${Date.now()}`,
         orderNumber,
         date: new Date().toISOString().split('T')[0],
-        items: cart.map((c) => ({
+        items: activeCart.map((c) => ({
           productId: c.productId,
           name: c.name,
           price: c.price,
@@ -86,31 +164,23 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           selectedColor: c.selectedColor.name,
           qty: c.qty,
         })),
-        shippingAddress: {
-          fullName,
-          email,
-          phone,
-          address: street,
-          city,
-          state,
-          postalCode,
-          country,
-        },
-        deliveryMethod,
-        paymentMethod,
+        shippingAddress: finalAddress,
+        deliveryMethod: finalDeliveryMethod,
+        paymentMethod: finalMethod,
         subtotal,
         discount: discountAmount,
         couponCode: appliedCoupon || undefined,
-        shippingFee,
+        shippingFee: finalShippingFee,
         tax,
-        total: grandTotal,
-        status: 'Processing',
+        total: finalGrandTotal,
+        status: isGooglePay && paymentDetails?.settlementStatus === 'Pending Deposit' ? 'Pending' : 'Processing',
         trackingNumber,
-        estimatedDelivery: new Date(Date.now() + (deliveryMethod === 'express' ? 2 : 4) * 86400000).toLocaleDateString(undefined, {
+        estimatedDelivery: new Date(Date.now() + (finalDeliveryMethod === 'express' ? 2 : 4) * 86400000).toLocaleDateString(undefined, {
           weekday: 'short',
           month: 'short',
           day: 'numeric',
         }),
+        paymentDetails,
       };
 
       setPlacedOrder(newOrder);
@@ -121,15 +191,15 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       // Trigger celebration confetti
       try {
         confetti({
-          particleCount: 80,
-          spread: 70,
+          particleCount: 90,
+          spread: 80,
           origin: { y: 0.6 },
-          colors: ['#064e3b', '#059669', '#fbbf24', '#f59e0b'],
+          colors: ['#4285F4', '#34A853', '#FBBC05', '#EA4335', '#064e3b', '#059669'],
         });
       } catch {
         // Safe fallback
       }
-    }, 1200);
+    }, 600);
   };
 
   return (
@@ -395,43 +465,106 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               <div className="grid grid-cols-3 gap-2">
                 <button
                   type="button"
-                  onClick={() => setPaymentMethod('card')}
-                  className={`p-3 rounded-xl border text-xs font-semibold flex flex-col items-center gap-1.5 transition ${
-                    paymentMethod === 'card'
-                      ? 'border-[#8A9A5B] bg-[#F0F4E8] text-[#3F4C27] ring-2 ring-[#8A9A5B]/20'
-                      : 'border-[#E8E2D8] text-[#5F584E] hover:bg-[#FAF7F2]'
-                  }`}
-                >
-                  <CreditCard className="w-4 h-4" />
-                  <span>Card</span>
-                </button>
-
-                <button
-                  type="button"
+                  id="checkout-method-googlepay-btn"
                   onClick={() => setPaymentMethod('googlepay')}
-                  className={`p-3 rounded-xl border text-xs font-semibold flex flex-col items-center gap-1.5 transition ${
+                  className={`p-3 rounded-2xl border text-xs font-semibold flex flex-col items-center gap-1.5 transition ${
                     paymentMethod === 'googlepay'
-                      ? 'border-[#8A9A5B] bg-[#F0F4E8] text-[#3F4C27] ring-2 ring-[#8A9A5B]/20'
+                      ? 'border-[#4285F4] bg-[#F8F9FA] text-[#202124] ring-2 ring-[#4285F4]/30 shadow-xs'
                       : 'border-[#E8E2D8] text-[#5F584E] hover:bg-[#FAF7F2]'
                   }`}
                 >
-                  <span className="font-bold text-xs">GPay / Apple</span>
-                  <span>1-Click</span>
+                  <div className="flex items-center gap-1.5">
+                    <GoogleGLogo className="w-4 h-4" />
+                    <span className="font-bold text-[#202124]">Pay</span>
+                  </div>
+                  <span className="text-[10px] text-[#1a73e8] font-bold">1-Click / Fast</span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setPaymentMethod('cod')}
-                  className={`p-3 rounded-xl border text-xs font-semibold flex flex-col items-center gap-1.5 transition ${
-                    paymentMethod === 'cod'
-                      ? 'border-[#8A9A5B] bg-[#F0F4E8] text-[#3F4C27] ring-2 ring-[#8A9A5B]/20'
+                  id="checkout-method-card-btn"
+                  onClick={() => setPaymentMethod('card')}
+                  className={`p-3 rounded-2xl border text-xs font-semibold flex flex-col items-center gap-1.5 transition ${
+                    paymentMethod === 'card'
+                      ? 'border-[#8A9A5B] bg-[#F0F4E8] text-[#3F4C27] ring-2 ring-[#8A9A5B]/20 shadow-xs'
                       : 'border-[#E8E2D8] text-[#5F584E] hover:bg-[#FAF7F2]'
                   }`}
                 >
-                  <Truck className="w-4 h-4" />
+                  <CreditCard className="w-4 h-4 text-[#8A9A5B]" />
+                  <span>Credit Card</span>
+                  <span className="text-[10px] text-[#A68F7A]">Visa / Master</span>
+                </button>
+
+                <button
+                  type="button"
+                  id="checkout-method-cod-btn"
+                  onClick={() => setPaymentMethod('cod')}
+                  className={`p-3 rounded-2xl border text-xs font-semibold flex flex-col items-center gap-1.5 transition ${
+                    paymentMethod === 'cod'
+                      ? 'border-[#C17F59] bg-[#FAF0EB] text-[#C17F59] ring-2 ring-[#C17F59]/20 shadow-xs'
+                      : 'border-[#E8E2D8] text-[#5F584E] hover:bg-[#FAF7F2]'
+                  }`}
+                >
+                  <Truck className="w-4 h-4 text-[#C17F59]" />
                   <span>Cash on Deliv.</span>
+                  <span className="text-[10px] text-[#A68F7A]">Handover Cash</span>
                 </button>
               </div>
+
+              {/* Google Pay Form & Express Sheet trigger */}
+              {paymentMethod === 'googlepay' && (
+                <div className="bg-[#F8F9FA] p-5 rounded-2xl border border-[#dadce0] space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <GoogleGLogo className="w-5 h-5" />
+                      <span className="font-bold text-sm text-[#202124]">Google Pay Connected</span>
+                    </div>
+                    <span className="text-[11px] font-semibold text-[#188038] bg-[#e6f4ea] px-2.5 py-0.5 rounded-full border border-[#ceead6] flex items-center gap-1">
+                      <Check className="w-3 h-3 stroke-[3]" />
+                      <span>Verified Google Account</span>
+                    </span>
+                  </div>
+
+                  {/* Merchant UPI & Direct GPay Details */}
+                  <div className="bg-white p-3.5 rounded-xl border border-[#dadce0] space-y-2 text-xs">
+                    <div className="flex items-center justify-between pb-2 border-b border-[#dadce0]">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-[#1a73e8] text-white flex items-center justify-center font-bold text-[10px]">
+                          G
+                        </div>
+                        <span className="text-[#5f6368] font-medium">Paying to:</span>
+                        <span className="font-semibold text-[#202124]">{getStoredMerchantSettings().merchantName}</span>
+                      </div>
+                      <span className="text-[10px] text-[#188038] font-semibold">Direct UPI / GPay</span>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-1 text-[11px]">
+                      <span className="text-[#5f6368]">Merchant UPI ID:</span>
+                      <span className="font-mono font-bold text-[#1a73e8]">{getStoredMerchantSettings().businessUpiId}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-[#5f6368]">Merchant Email:</span>
+                      <span className="font-mono text-[#202124]">{getStoredMerchantSettings().merchantEmail}</span>
+                    </div>
+                  </div>
+
+                  {/* Express Google Pay Direct Button */}
+                  <div className="pt-1">
+                    <GooglePayButton
+                      onClick={() => setShowGooglePaySheet(true)}
+                      total={grandTotal}
+                      currency={currency}
+                      variant="pay"
+                      className="w-full"
+                    />
+                    <p className="text-[11px] text-[#5f6368] text-center mt-2 flex items-center justify-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-[#188038]" />
+                      <span>Encrypted with biometric passkey authentication. Fast & seamless.</span>
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Card Form */}
               {paymentMethod === 'card' && (
@@ -439,7 +572,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   <div className="flex justify-between items-center">
                     <span className="text-xs font-bold text-[#5F584E]">Cardholder Information</span>
                     <span className="text-[10px] text-[#3F4C27] font-semibold bg-[#F0F4E8] border border-[#8A9A5B]/30 px-2 py-0.5 rounded">
-                      Sandbox Test Mode
+                      256-Bit SSL Secured
                     </span>
                   </div>
 
@@ -487,18 +620,6 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 </div>
               )}
 
-              {paymentMethod === 'googlepay' && (
-                <div className="bg-[#FAF7F2] p-5 rounded-2xl border border-[#E8E2D8] text-center space-y-2">
-                  <div className="w-12 h-12 rounded-full bg-[#3F4C27] text-white flex items-center justify-center mx-auto font-bold text-sm">
-                    GPay
-                  </div>
-                  <h5 className="font-bold text-xs text-[#2D2D2D]">Instant One-Touch Payment</h5>
-                  <p className="text-[11px] text-[#6B655B]">
-                    Your authenticated payment method will be charged seamlessly upon placing order.
-                  </p>
-                </div>
-              )}
-
               {paymentMethod === 'cod' && (
                 <div className="bg-[#FAF0EB] p-4 rounded-2xl border border-[#C17F59]/30 text-xs text-[#C17F59] space-y-1">
                   <p className="font-bold">Cash on Delivery Policy</p>
@@ -535,21 +656,33 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               </div>
 
               {/* Submit Button */}
-              <button
-                id="checkout-place-order-btn"
-                onClick={handlePlaceOrder}
-                disabled={isSubmitting}
-                className="w-full py-4 bg-[#C17F59] hover:bg-[#A86A46] text-white font-bold text-sm rounded-2xl transition shadow-lg flex items-center justify-center gap-2"
-              >
-                {isSubmitting ? (
-                  <span>Processing Payment & Securing Order...</span>
-                ) : (
-                  <>
-                    <Lock className="w-4 h-4 text-white" />
-                    <span>Authorize & Place Order ({formatPrice(grandTotal, currency)})</span>
-                  </>
-                )}
-              </button>
+              {paymentMethod === 'googlepay' ? (
+                <button
+                  id="checkout-place-order-btn"
+                  onClick={() => setShowGooglePaySheet(true)}
+                  disabled={isSubmitting}
+                  className="w-full py-4 bg-black hover:bg-[#202124] text-white font-bold text-sm rounded-2xl transition shadow-lg flex items-center justify-center gap-2"
+                >
+                  <GoogleGLogo className="w-5 h-5 shrink-0" />
+                  <span>Authorize & Pay with Google Pay ({formatPrice(grandTotal, currency)})</span>
+                </button>
+              ) : (
+                <button
+                  id="checkout-place-order-btn"
+                  onClick={() => handlePlaceOrder()}
+                  disabled={isSubmitting}
+                  className="w-full py-4 bg-[#C17F59] hover:bg-[#A86A46] text-white font-bold text-sm rounded-2xl transition shadow-lg flex items-center justify-center gap-2"
+                >
+                  {isSubmitting ? (
+                    <span>Processing Payment & Securing Order...</span>
+                  ) : (
+                    <>
+                      <Lock className="w-4 h-4 text-white" />
+                      <span>Authorize & Place Order ({formatPrice(grandTotal, currency)})</span>
+                    </>
+                  )}
+                </button>
+              )}
             </div>
           )}
 
@@ -602,6 +735,56 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   ))}
                 </div>
 
+                <div className="pt-2 border-t border-[#E8E2D8] flex justify-between items-center text-xs">
+                  <span className="text-[#5F584E]">Payment Method</span>
+                  {placedOrder.paymentMethod === 'googlepay' ? (
+                    <span className="flex items-center gap-1.5 font-bold text-[#202124] bg-white px-2.5 py-1 rounded-lg border border-[#dadce0]">
+                      <GoogleGLogo className="w-3.5 h-3.5" />
+                      <span>Google Pay (•••• {paidWithCardLast4})</span>
+                    </span>
+                  ) : placedOrder.paymentMethod === 'cod' ? (
+                    <span className="font-bold text-[#C17F59] bg-[#FAF0EB] px-2.5 py-1 rounded-lg border border-[#C17F59]/30">
+                      Cash on Delivery
+                    </span>
+                  ) : (
+                    <span className="font-bold text-[#2D2D2D] bg-white px-2.5 py-1 rounded-lg border border-[#E8E2D8]">
+                      Credit Card (•••• 4242)
+                    </span>
+                  )}
+                </div>
+
+                {placedOrder.paymentMethod === 'googlepay' && (
+                  <div className="bg-[#e6f4ea] border border-[#ceead6] rounded-xl p-3 space-y-2 text-xs text-[#137333]">
+                    <div className="flex items-center justify-between font-semibold">
+                      <div className="flex items-center gap-1.5">
+                        <ShieldCheck className="w-4 h-4 text-[#188038]" />
+                        <span>
+                          {placedOrder.paymentDetails?.settlementStatus === 'Pending Deposit'
+                            ? 'Google Pay UTR Submitted — Pending Merchant Verification'
+                            : 'Google Pay Payment Verified'}
+                        </span>
+                      </div>
+                      <span className="font-mono text-[10px] text-[#188038]">
+                        {placedOrder.paymentDetails?.transactionId || `GPAY-${placedOrder.orderNumber}`}
+                      </span>
+                    </div>
+                    <div className="bg-white/80 rounded-lg p-2 border border-[#ceead6] text-[11px] space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-[#5f6368]">Sent to Merchant:</span>
+                        <span className="font-bold text-[#202124]">
+                          {placedOrder.paymentDetails?.recipientMerchantName || 'Mehrana Wears (Faruk Karim)'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-[#5f6368]">Destination:</span>
+                        <span className="font-medium text-[#188038]">
+                          {placedOrder.paymentDetails?.payoutDestination || 'Direct UPI / Bank Account'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="pt-2 border-t border-[#E8E2D8] flex justify-between items-center text-sm font-bold text-[#2D2D2D]">
                   <span>Grand Total Paid</span>
                   <span className="text-[#3F4C27] font-serif text-base">{formatPrice(placedOrder.total, currency)}</span>
@@ -629,6 +812,37 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           )}
         </div>
       </div>
+
+      {/* Google Pay Interactive Authorization Sheet */}
+      <GooglePaySheet
+        isOpen={showGooglePaySheet}
+        onClose={() => setShowGooglePaySheet(false)}
+        onConfirm={(confirmData) => handlePlaceOrder('googlepay', confirmData)}
+        total={grandTotal}
+        subtotal={subtotal}
+        discount={discountAmount}
+        currency={currency}
+        userEmail={email}
+        userName={fullName}
+        userPhone={phone}
+        shippingAddress={{
+          fullName,
+          street,
+          city,
+          state,
+          postalCode,
+          country,
+        }}
+        orderItems={activeCart.map((c) => ({
+          name: c.name,
+          qty: c.qty,
+          price: c.price,
+          image_url: c.image_url,
+          selectedSize: c.selectedSize,
+          selectedColor: c.selectedColor?.name,
+        }))}
+        orderItemCount={activeCart.reduce((sum, item) => sum + item.qty, 0)}
+      />
     </div>
   );
 };

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Sparkles, Mail, Check, ShieldCheck, Heart, ArrowUp } from 'lucide-react';
 import { ProductCategory } from '../types';
+import { BrandLogo } from './BrandLogo';
+import { GoogleGLogo } from './GooglePaySheet';
 
 interface FooterProps {
   onSelectCategory: (cat: ProductCategory) => void;
@@ -29,45 +31,52 @@ export const Footer: React.FC<FooterProps> = ({
 
   return (
     <footer className="bg-[#2A341D] text-[#D8CFC4] border-t border-[#3F4C27] mt-20">
-      {/* Newsletter VIP Club Banner */}
+      {/* Newsletter / Latest Updates Banner */}
       <div className="border-b border-[#3F4C27] bg-[#222B17]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <div id="newsletter-updates-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
-            <div className="lg:col-span-6 space-y-1">
+            <div className="lg:col-span-6 space-y-1.5">
               <span className="text-[#C17F59] text-xs font-bold uppercase tracking-widest flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5" />
-                <span>Join Mehrana Privé Club</span>
+                <span>Stay Connected & Inspired</span>
               </span>
-              <h3 className="font-serif font-bold text-2xl text-[#FDFBF7]">Receive 15% Off Your First Order</h3>
-              <p className="text-xs text-[#A68F7A]">
-                Subscribe for private festive previews, bespoke styling edits, and member-only trunk shows.
+              <h3 className="font-serif font-bold text-2xl text-[#FDFBF7]">Get the Latest Updates & Exclusive Edits</h3>
+              <p className="text-xs text-[#A68F7A] leading-relaxed">
+                Be the first to know about new arrivals, seasonal Kaftan & Farshi sets, flash collections, and VIP offers.
               </p>
             </div>
 
             <div className="lg:col-span-6">
               {subscribed ? (
-                <div className="bg-[#3F4C27] border border-[#8A9A5B] text-[#FDFBF7] p-3.5 rounded-2xl flex items-center gap-2.5 text-xs font-semibold">
-                  <Check className="w-4 h-4 text-[#8A9A5B] shrink-0" />
-                  <span>Welcome to Privé! Use code <strong className="text-[#C17F59]">WELCOME10</strong> at checkout.</span>
+                <div className="bg-[#3F4C27] border border-[#8A9A5B] text-[#FDFBF7] p-4 rounded-2xl flex items-center gap-3 text-xs font-semibold animate-in fade-in">
+                  <div className="w-7 h-7 rounded-full bg-[#8A9A5B]/20 flex items-center justify-center shrink-0">
+                    <Check className="w-4 h-4 text-[#8A9A5B]" />
+                  </div>
+                  <div>
+                    <span className="block font-bold">You're Subscribed!</span>
+                    <span className="text-[#D8CFC4] font-normal text-[11px]">We'll send the latest updates and drops straight to your inbox.</span>
+                  </div>
                 </div>
               ) : (
-                <form onSubmit={handleSubscribe} className="flex gap-2">
+                <form onSubmit={handleSubscribe} className="flex flex-col sm:flex-row gap-2.5">
                   <div className="relative flex-1">
                     <Mail className="w-4 h-4 text-[#8A9A5B] absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
+                      id="newsletter-email-input"
                       type="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Enter your email address..."
+                      placeholder="Enter your email to get latest updates..."
                       className="w-full bg-[#354024] border border-[#45532F] text-[#FDFBF7] placeholder-[#8A9A5B]/70 text-xs pl-10 pr-4 py-3.5 rounded-2xl outline-hidden focus:border-[#C17F59] focus:bg-[#3D4B2A]"
                     />
                   </div>
                   <button
+                    id="newsletter-submit-btn"
                     type="submit"
-                    className="px-6 py-3.5 bg-[#C17F59] hover:bg-[#A86A46] text-white font-bold text-xs rounded-2xl transition shadow-md whitespace-nowrap"
+                    className="px-6 py-3.5 bg-[#C17F59] hover:bg-[#A86A46] text-white font-bold text-xs rounded-2xl transition shadow-md whitespace-nowrap flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    Subscribe
+                    <span>Get Updates</span>
                   </button>
                 </form>
               )}
@@ -82,17 +91,10 @@ export const Footer: React.FC<FooterProps> = ({
           
           {/* Brand Info */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-[#C17F59] text-white flex items-center justify-center font-bold">
-                <Sparkles className="w-5 h-5" />
-              </div>
-              <span className="font-serif text-2xl font-bold tracking-tight text-[#FDFBF7]">
-                MEHRANA <span className="font-light text-[#8A9A5B]">WEARS</span>
-              </span>
-            </div>
+            <BrandLogo size="md" variant="light" />
             
             <p className="text-xs text-[#A68F7A] leading-relaxed max-w-sm">
-              Mehrana Wears redefines luxury modest clothing and artisanal festive pret. We celebrate authentic handlooms, raw silks, and delicate needlework tailored for the modern silhouette.
+              Mehrana wear redefines luxury modest clothing and artisanal festive pret. We celebrate authentic handlooms, raw silks, and delicate needlework tailored for the modern silhouette.
             </p>
 
             <div className="flex items-center gap-2 pt-2 text-xs text-[#8A9A5B]">
@@ -166,9 +168,22 @@ export const Footer: React.FC<FooterProps> = ({
           <div className="space-y-3">
             <h4 className="font-serif font-bold text-sm text-[#FDFBF7]">Store & Boutique</h4>
             <div className="text-xs text-[#A68F7A] space-y-1.5 leading-relaxed">
-              <p>Email: concierge@mehrana-wear.com</p>
-              <p>Hotline: +1 (800) 456-MEHRANA</p>
-              <p>Available Mon - Sat, 9am - 8pm EST</p>
+              <p>
+                <span className="text-[#D8CFC4]">Email: </span>
+                <a href="mailto:farukarim@gmail.com" className="hover:text-[#FDFBF7] transition underline underline-offset-2">
+                  farukarim@gmail.com
+                </a>
+              </p>
+              <p>
+                <span className="text-[#D8CFC4]">Phone No: </span>
+                <a href="tel:+923450587779" className="hover:text-[#FDFBF7] transition">
+                  +923450587779
+                </a>
+              </p>
+              <p>
+                <span className="text-[#D8CFC4]">Available: </span>
+                <span>Monday to Thursday</span>
+              </p>
             </div>
 
             <div className="pt-2">
@@ -183,8 +198,46 @@ export const Footer: React.FC<FooterProps> = ({
           </div>
         </div>
 
+        {/* Accepted Payment Methods Bar */}
+        <div className="mt-10 pt-6 border-t border-[#3F4C27]/70 flex flex-col md:flex-row items-center justify-between gap-3 text-xs text-[#A68F7A]">
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-[#8A9A5B]" />
+            <span className="font-semibold text-[#D8CFC4]">Verified Safe & Secure Checkout</span>
+          </div>
+
+          <div className="flex items-center flex-wrap gap-2">
+            <span className="text-[11px] text-[#A68F7A] mr-1">Accepted Payment:</span>
+            
+            {/* Google Pay Pill */}
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white text-[#202124] text-xs font-semibold shadow-xs border border-[#dadce0]">
+              <GoogleGLogo className="w-3.5 h-3.5 shrink-0" />
+              <span className="font-bold tracking-tight">Pay</span>
+            </span>
+
+            {/* Apple Pay Pill */}
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#2D2D2D] text-white text-xs font-medium border border-white/10">
+              <span> Pay</span>
+            </span>
+
+            {/* Visa Pill */}
+            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-[#1a73e8] text-white text-[11px] font-bold tracking-wider">
+              VISA
+            </span>
+
+            {/* Mastercard Pill */}
+            <span className="inline-flex items-center px-2 py-1 rounded-lg bg-[#d93025] text-white text-[11px] font-bold tracking-wider">
+              Mastercard
+            </span>
+
+            {/* Cash on Delivery Pill */}
+            <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-[#FAF0EB] text-[#C17F59] text-[11px] font-semibold border border-[#C17F59]/30">
+              Cash on Delivery
+            </span>
+          </div>
+        </div>
+
         {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-[#3F4C27] flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-[#8A9A5B]">
+        <div className="mt-6 pt-6 border-t border-[#3F4C27] flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-[#8A9A5B]">
           <p>© {new Date().getFullYear()} Mehrana Wears Ltd. All rights reserved.</p>
 
           <div className="flex items-center gap-4">

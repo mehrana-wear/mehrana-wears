@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { ProductCategory, CurrencyCode, User } from '../types';
 import { CURRENCY_CONFIGS } from '../utils/currency';
+import { UserAvatar } from './UserAvatar';
+import { BrandLogo } from './BrandLogo';
 
 interface HeaderProps {
   currentCategory: ProductCategory;
@@ -67,24 +69,26 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-40 bg-[#FDFBF7]/95 backdrop-blur-md border-b border-[#E8E2D8] shadow-xs">
       {/* Top Luxury Announcement Bar */}
-      <div className="bg-[#354024] text-[#F5F0E8] text-xs py-2 px-4 border-b border-[#2A341D]">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 text-center sm:text-left">
-          <div className="flex items-center gap-2 font-medium">
-            <span className="bg-[#C17F59] text-white px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-2xs">
-              Limited Offer
+      <div className="bg-[#354024] text-[#F5F0E8] text-xs py-1.5 sm:py-2 px-3 sm:px-4 border-b border-[#2A341D]">
+        <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 font-medium min-w-0">
+            <span className="bg-[#C17F59] text-white px-2 sm:px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-bold uppercase tracking-wider shadow-2xs shrink-0">
+              Express
             </span>
-            <span>Use code <strong className="text-[#E8E1D5] font-semibold tracking-wide underline underline-offset-2">MEHRANA15</strong> for 15% off orders over $100</span>
+            <span className="text-[#FDFBF7] font-semibold tracking-wide text-[11px] sm:text-xs truncate">
+              Delivery all over Pakistan
+            </span>
           </div>
 
-          <div className="flex items-center gap-4 text-[#D8CFC4]">
-            <span className="hidden md:inline">Complimentary Worldwide Express Delivery</span>
+          <div className="flex items-center gap-2 sm:gap-4 text-[#D8CFC4] shrink-0">
+            <span className="hidden md:inline">Fast 2–4 Days Doorstep Service</span>
             
             {/* Currency Selector */}
             <div className="relative">
               <button
                 id="currency-selector-btn"
                 onClick={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
-                className="flex items-center gap-1 text-xs font-semibold text-[#FDFBF7] hover:text-white transition-colors bg-[#45532F] px-2.5 py-0.5 rounded-md"
+                className="flex items-center gap-1 text-[11px] sm:text-xs font-semibold text-[#FDFBF7] hover:text-white transition-colors bg-[#45532F] px-2 sm:px-2.5 py-0.5 rounded-md"
               >
                 <span>{currency}</span>
                 <ChevronDown className="w-3 h-3" />
@@ -115,48 +119,42 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               id="header-admin-portal-btn"
               onClick={onOpenAdmin}
-              className={`flex items-center gap-1 text-[11px] font-medium px-2.5 py-0.5 rounded-md transition-all ${
+              className={`flex items-center gap-1 text-[10px] sm:text-[11px] font-medium px-2 sm:px-2.5 py-0.5 rounded-md transition-all ${
                 isAdminUnlocked 
                   ? 'bg-[#8A9A5B] text-white font-semibold shadow-xs' 
                   : 'text-[#D8CFC4] hover:text-white bg-[#45532F]/60 hover:bg-[#45532F]'
               }`}
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-[#8A9A5B]" />
-              <span>Admin Portal</span>
+              <ShieldCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#8A9A5B]" />
+              <span>Admin</span>
+              <span className="hidden sm:inline">Portal</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Main Navbar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20 gap-4">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 sm:h-20 gap-1.5 sm:gap-4">
           
-          {/* Mobile Menu Trigger */}
-          <button
-            id="mobile-menu-toggle-btn"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="lg:hidden p-2 rounded-xl text-[#5F584E] hover:text-[#2D2D2D] hover:bg-[#F5F0E8] transition"
-            aria-label="Toggle navigation menu"
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+            {/* Mobile Menu Trigger */}
+            <button
+              id="mobile-menu-toggle-btn"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-1.5 sm:p-2 rounded-xl text-[#5F584E] hover:text-[#2D2D2D] hover:bg-[#F5F0E8] transition shrink-0"
+              aria-label="Toggle navigation menu"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
+            </button>
 
-          {/* Brand Logo */}
-          <div 
-            onClick={() => onSelectCategory('All')} 
-            className="cursor-pointer flex items-center gap-3 group select-none"
-          >
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#3F4C27] to-[#2D2D2D] flex items-center justify-center text-[#E8E1D5] shadow-md group-hover:scale-105 transition-transform duration-300">
-              <Sparkles className="w-5 h-5 text-[#C17F59]" />
-            </div>
-            <div>
-              <span className="font-serif text-2xl sm:text-3xl font-bold tracking-tight text-[#2D2D2D] block leading-none">
-                MEHRANA
-              </span>
-              <span className="text-[10px] tracking-[0.25em] font-semibold text-[#8A9A5B] uppercase block mt-1">
-                Luxury Apparel & Wear
-              </span>
+            {/* Brand Logo */}
+            <div 
+              onClick={() => onSelectCategory('All')} 
+              className="cursor-pointer group select-none min-w-0"
+              aria-label="Mehrana wear home"
+            >
+              <BrandLogo size="md" variant="dark" />
             </div>
           </div>
 
@@ -181,19 +179,19 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          {/* Action Icons */}
-          <div className="flex items-center gap-2 sm:gap-4">
+          {/* Action Icons (All Visible on Mobile & Desktop) */}
+          <div className="flex items-center gap-1 sm:gap-3 shrink-0">
             {/* Wishlist Button */}
             <button
               id="header-wishlist-btn"
               onClick={onOpenWishlist}
-              className="relative p-2.5 rounded-full text-[#5F584E] hover:text-[#C17F59] hover:bg-[#FAF0EB] transition-colors"
+              className="relative p-1.5 sm:p-2.5 rounded-full text-[#5F584E] hover:text-[#C17F59] hover:bg-[#FAF0EB] transition-colors"
               title="Wishlist"
               aria-label="View Wishlist"
             >
               <Heart className="w-5 h-5" />
               {wishlistCount > 0 && (
-                <span className="absolute top-1 right-1 w-5 h-5 bg-[#C17F59] text-white rounded-full text-[11px] font-bold flex items-center justify-center shadow-xs animate-scale">
+                <span className="absolute -top-0.5 -right-0.5 sm:top-1 sm:right-1 w-4 h-4 sm:w-5 sm:h-5 bg-[#C17F59] text-white rounded-full text-[10px] sm:text-[11px] font-bold flex items-center justify-center shadow-xs animate-scale">
                   {wishlistCount}
                 </span>
               )}
@@ -203,36 +201,32 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               id="header-cart-btn"
               onClick={onOpenCart}
-              className="relative flex items-center gap-2 px-4 py-2 rounded-full bg-[#354024] hover:bg-[#2A341D] text-[#FDFBF7] transition-all shadow-sm hover:shadow-md group"
+              className="relative flex items-center gap-1 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-[#354024] hover:bg-[#2A341D] text-[#FDFBF7] transition-all shadow-sm hover:shadow-md group"
               title="Shopping Cart"
               aria-label="View Shopping Cart"
             >
-              <ShoppingBag className="w-4 h-4 text-[#C17F59] group-hover:scale-110 transition-transform" />
-              <span className="font-semibold text-xs tracking-wide">Bag</span>
-              <span className="bg-[#45532F] text-white text-[11px] font-bold px-2 py-0.5 rounded-full">
+              <ShoppingBag className="w-4 h-4 text-[#C17F59] group-hover:scale-110 transition-transform shrink-0" />
+              <span className="font-semibold text-[11px] sm:text-xs tracking-wide hidden sm:inline">Bag</span>
+              <span className="bg-[#45532F] text-white text-[10px] sm:text-[11px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full">
                 {cartCount}
               </span>
             </button>
 
-            {/* User Account / Login */}
+            {/* User Account / Login - Always visible on mobile & desktop */}
             {currentUser ? (
               <button
                 id="header-user-account-btn"
                 onClick={onOpenAccount}
-                className="flex items-center gap-2 pl-1 pr-3 py-1 rounded-full border border-[#E8E2D8] hover:border-[#8A9A5B] bg-[#F5F0E8] hover:bg-[#FAF7F2] transition-all"
+                className="flex items-center gap-1.5 sm:gap-2 pl-1 pr-2 sm:pr-3 py-1 rounded-full border border-[#E8E2D8] hover:border-[#8A9A5B] bg-[#F5F0E8] hover:bg-[#FAF7F2] transition-all group"
+                title={`Logged in as ${currentUser.name} (${currentUser.email})`}
               >
-                {currentUser.avatar ? (
-                  <img
-                    src={currentUser.avatar}
-                    alt={currentUser.name}
-                    className="w-7 h-7 rounded-full object-cover border border-[#E8E2D8] bg-white"
-                  />
-                ) : (
-                  <div className="w-7 h-7 rounded-full bg-white text-[#3F4C27] border border-[#E8E2D8] flex items-center justify-center font-bold text-xs">
-                    {currentUser.name.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <span className="text-xs font-semibold text-[#2D2D2D] hidden sm:inline max-w-[100px] truncate">
+                <UserAvatar
+                  name={currentUser.name}
+                  avatarUrl={currentUser.avatar}
+                  size="sm"
+                  showGoogleBadge={currentUser.email.toLowerCase().includes('gmail.com') || currentUser.authProvider === 'google'}
+                />
+                <span className="text-[11px] sm:text-xs font-semibold text-[#2D2D2D] max-w-[56px] sm:max-w-[100px] truncate">
                   {currentUser.name.split(' ')[0]}
                 </span>
               </button>
@@ -240,9 +234,9 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 id="header-login-btn"
                 onClick={onOpenAuth}
-                className="hidden sm:flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-[#5F584E] hover:text-[#2D2D2D] hover:bg-[#F5F0E8] rounded-full transition-colors"
+                className="flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 text-[11px] sm:text-xs font-semibold text-[#3F4C27] bg-[#F0F4E8] hover:bg-[#E2ECD5] border border-[#8A9A5B]/40 rounded-full transition-colors whitespace-nowrap shadow-2xs"
               >
-                <UserIcon className="w-4 h-4 text-[#8A9A5B]" />
+                <UserIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#3F4C27] shrink-0" />
                 <span>Sign In</span>
               </button>
             )}
@@ -271,9 +265,9 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Category Navigation Bar (Desktop) */}
-        <nav className="hidden lg:flex items-center justify-between border-t border-[#E8E2D8]/80 py-2.5 overflow-x-auto no-scrollbar">
-          <div className="flex items-center space-x-1">
+        {/* Category Navigation Bar (Scrollable on Mobile/Tablet, Full on Desktop) */}
+        <nav className="flex items-center justify-between border-t border-[#E8E2D8]/80 py-2 sm:py-2.5 gap-2">
+          <div className="flex items-center space-x-1 overflow-x-auto no-scrollbar flex-1">
             {categories.map((cat) => {
               const active = currentCategory === cat.id;
               return (
@@ -281,7 +275,7 @@ export const Header: React.FC<HeaderProps> = ({
                   key={cat.id}
                   id={`nav-category-${cat.id.toLowerCase()}`}
                   onClick={() => onSelectCategory(cat.id)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${
+                  className={`px-3 sm:px-3.5 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap shrink-0 ${
                     active
                       ? 'bg-[#3F4C27] text-white font-semibold shadow-xs'
                       : 'text-[#5F584E] hover:text-[#2D2D2D] hover:bg-[#F5F0E8]'
@@ -296,7 +290,7 @@ export const Header: React.FC<HeaderProps> = ({
           {onToggleFilterDrawer && (
             <button
               onClick={onToggleFilterDrawer}
-              className="flex items-center gap-1.5 text-xs font-medium text-[#5F584E] hover:text-[#2D2D2D] px-3.5 py-1.5 rounded-full hover:bg-[#F5F0E8] transition-colors"
+              className="flex items-center gap-1 sm:gap-1.5 text-xs font-medium text-[#5F584E] hover:text-[#2D2D2D] px-2.5 sm:px-3.5 py-1.5 rounded-full bg-[#FAF7F2] lg:bg-transparent border border-[#E8E2D8] lg:border-transparent hover:bg-[#F5F0E8] transition-colors shrink-0"
             >
               <SlidersHorizontal className="w-3.5 h-3.5 text-[#8A9A5B]" />
               <span>Filters</span>
@@ -307,7 +301,7 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Mobile Drawer Menu */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-x-0 top-[110px] bg-[#FDFBF7] border-b border-[#E8E2D8] p-4 shadow-xl z-50 animate-fadeIn">
+        <div className="lg:hidden absolute inset-x-0 top-full bg-[#FDFBF7] border-b border-[#E8E2D8] p-4 shadow-2xl z-50 max-h-[78vh] overflow-y-auto animate-fadeIn">
           <div className="space-y-1 pb-4 border-b border-[#E8E2D8]">
             <p className="text-[11px] font-bold text-[#A68F7A] uppercase tracking-wider px-3 mb-1">
               Shop Collections

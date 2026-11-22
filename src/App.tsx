@@ -66,13 +66,33 @@ import {
   saveStoredReviews 
 } from './utils/storage';
 import { 
+  auth, 
+  syncUserProfile, 
+  updateUserProfile, 
+  logOut,
+  subscribeProducts,
+  saveProductToFirestore,
+  updateProductInFirestore,
+  deleteProductFromFirestore,
+  clearAllProductsInFirestore,
+  seedProductsToFirestore,
+  subscribeOrders,
+  saveOrderToFirestore,
+  updateOrderStatusInFirestore,
+  subscribeReviews,
+  saveReviewToFirestore
+} from './lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { 
   SlidersHorizontal, 
   Sparkles, 
   Search, 
   RotateCcw, 
   Filter, 
   Check, 
-  ChevronDown 
+  ChevronDown,
+  ShoppingBag,
+  PlusCircle
 } from 'lucide-react';
 import { PROMO_CODES } from './data/initialProducts';
 
@@ -99,6 +119,10 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isWishlistOpen, setIsWishlistOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [checkoutPaymentMethod, setCheckoutPaymentMethod] = useState<'card' | 'cod' | 'googlepay'>('googlepay');
+  const [checkoutStep, setCheckoutStep] = useState<1 | 2 | 3>(1);
+  const [autoOpenGooglePay, setAutoOpenGooglePay] = useState(false);
+  const [directCheckoutItems, setDirectCheckoutItems] = useState<CartItem[] | null>(null);
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isAdminUnlocked, setIsAdminUnlocked] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
@@ -106,7 +130,68 @@ export default function App() {
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
   const [showFilterBar, setShowFilterBar] = useState(false);
 
-  // Sync to Storage on State Changes
+  // Subscribe to Firebase Authentication State
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        try {
+          const userObj = await syncUserProfile(firebaseUser);
+          setCurrentUser(userObj);
+          if (userObj.role === 'admin') {
+            setIsAdminUnlocked(true);
+          }
+        } catch (err) {
+          console.error('Failed to sync Firebase authenticated user profile:', err);
+        }
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Real-time Firestore Subscriptions for Products, Orders, and Reviews across all devices
+  useEffect(() => {
+    let initialSyncDone = false;
+
+    // 1. Subscribe to Live Products
+    const unsubProducts = subscribeProducts((liveProducts) => {
+      if (liveProducts.length > 0) {
+        initialSyncDone = true;
+        setProducts(liveProducts);
+      } else if (!initialSyncDone) {
+        initialSyncDone = true;
+        // If Firestore is empty on cold start, seed catalog
+        const localProds = getStoredProducts();
+        if (localProds.length > 0) {
+          seedProductsToFirestore(localProds);
+        }
+      } else {
+        setProducts([]);
+      }
+    });
+
+    // 2. Subscribe to Live Orders
+    const unsubOrders = subscribeOrders((liveOrders) => {
+      if (liveOrders.length > 0) {
+        setOrders(liveOrders);
+      }
+    });
+
+    // 3. Subscribe to Live Reviews
+    const unsubReviews = subscribeReviews((liveReviews) => {
+      if (Object.keys(liveReviews).length > 0) {
+        setReviewsMap(liveReviews);
+      }
+    });
+
+    return () => {
+      unsubProducts();
+      unsubOrders();
+      unsubReviews();
+    };
+  }, []);
+
+  // Sync to Local Storage on State Changes as secondary offline cache
   useEffect(() => {
     saveStoredProducts(products);
   }, [products]);
@@ -242,23 +327,27 @@ export default function App() {
     return false;
   };
 
-  const handleOrderPlaced = (newOrder: Order) => {
+  const handleOrderPlaced = async (newOrder: Order) => {
     setOrders((prev) => [newOrder, ...prev]);
     // Reduce product inventory accordingly
     setProducts((prev) =>
       prev.map((prod) => {
         const matchingItem = newOrder.items.find((it) => it.productId === prod.id);
         if (matchingItem) {
-          return { ...prod, stock: Math.max(0, prod.stock - matchingItem.qty) };
+          const updatedProd = { ...prod, stock: Math.max(0, prod.stock - matchingItem.qty) };
+          updateProductInFirestore(updatedProd).catch(console.error);
+          return updatedProd;
         }
         return prod;
       })
     );
     // Clear cart
     setCart([]);
+    // Save order to Firestore for real-time tracking
+    await saveOrderToFirestore(newOrder);
   };
 
-  const handleAddProduct = (newProdData: Omit<Product, 'id' | 'createdAt' | 'sku'>) => {
+  const handleAddProduct = async (newProdData: Omit<Product, 'id' | 'createdAt' | 'sku'>) => {
     const sku = `MW-${newProdData.category.substring(0, 3).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
     const newProduct: Product = {
       ...newProdData,
@@ -266,33 +355,50 @@ export default function App() {
       sku,
       createdAt: new Date().toISOString(),
     };
-    setProducts((prev) => [newProduct, ...prev]);
+    // Optimistic UI update
+    setProducts((prev) => [newProduct, ...prev.filter((p) => p.id !== newProduct.id)]);
+    // Persist to Firestore across all devices
+    await saveProductToFirestore(newProduct);
   };
 
-  const handleUpdateProduct = (updated: Product) => {
+  const handleUpdateProduct = async (updated: Product) => {
     setProducts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+    await updateProductInFirestore(updated);
   };
 
-  const handleDeleteProduct = (id: string) => {
+  const handleDeleteProduct = async (id: string) => {
     setProducts((prev) => prev.filter((p) => p.id !== id));
     setCart((prev) => prev.filter((item) => item.productId !== id));
     setWishlistIds((prev) => prev.filter((wid) => wid !== id));
+    await deleteProductFromFirestore(id);
   };
 
-  const handleResetCatalog = () => {
+  const handleClearAllProducts = async () => {
+    setProducts([]);
+    setCart([]);
+    setWishlistIds([]);
+    saveStoredProducts([]);
+    await clearAllProductsInFirestore();
+  };
+
+  const handleResetCatalog = async () => {
     const fresh = resetStoredProducts();
     setProducts(fresh);
+    if (fresh.length > 0) {
+      await seedProductsToFirestore(fresh);
+    }
   };
 
-  const handleUpdateOrderStatus = (orderId: string, status: Order['status']) => {
+  const handleUpdateOrderStatus = async (orderId: string, status: Order['status']) => {
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status } : o)));
+    await updateOrderStatusInFirestore(orderId, status);
   };
 
-  const handleAddReview = (productId: string, rating: number, title: string, comment: string) => {
+  const handleAddReview = async (productId: string, rating: number, title: string, comment: string) => {
     const newRev: Review = {
       id: `rev-${Date.now()}`,
       productId,
-      userName: currentUser?.name || 'Faruk Karim',
+      userName: currentUser?.name || 'Customer',
       rating,
       date: new Date().toISOString().split('T')[0],
       title,
@@ -304,10 +410,12 @@ export default function App() {
       const existing = prev[productId] || [];
       return { ...prev, [productId]: [newRev, ...existing] };
     });
+    await saveReviewToFirestore(newRev);
   };
 
   const handleAdminUnlock = (passcode: string): boolean => {
-    if (passcode === 'admin123' || passcode.toLowerCase() === 'admin') {
+    const validPasscodes = ['iamadmin', 'Nothing123@#@', '445566'];
+    if (validPasscodes.includes(passcode.trim())) {
       setIsAdminUnlocked(true);
       return true;
     }
@@ -368,13 +476,13 @@ export default function App() {
             <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
               
               {/* Sort By Dropdown */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-[#5F584E] font-medium hidden sm:inline">Sort:</span>
+              <div className="flex items-center gap-1.5 sm:gap-2 flex-1 sm:flex-none">
+                <span className="text-xs text-[#5F584E] font-medium shrink-0">Sort:</span>
                 <select
                   id="catalog-sort-select"
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
-                  className="bg-white border border-[#E8E2D8] text-xs font-semibold rounded-xl px-3 py-2 text-[#2D2D2D] focus:border-[#8A9A5B] focus:ring-1 focus:ring-[#8A9A5B] outline-hidden cursor-pointer shadow-2xs"
+                  className="w-full sm:w-auto bg-white border border-[#E8E2D8] text-xs font-semibold rounded-xl px-2.5 sm:px-3 py-2 text-[#2D2D2D] focus:border-[#8A9A5B] focus:ring-1 focus:ring-[#8A9A5B] outline-hidden cursor-pointer shadow-2xs"
                 >
                   <option value="featured">Featured & Best Sellers</option>
                   <option value="price-low">Price: Low to High</option>
@@ -460,7 +568,27 @@ export default function App() {
 
         {/* Product Cards Grid */}
         <section className="px-4 sm:px-6 lg:px-8 pb-16">
-          {filteredProducts.length === 0 ? (
+          {products.length === 0 ? (
+            <div className="bg-[#FAF7F2] rounded-3xl p-12 text-center border border-[#E8E2D8] shadow-xs space-y-4 max-w-lg mx-auto my-8">
+              <div className="w-16 h-16 rounded-full bg-[#EFE9DF] text-[#8A9A5B] flex items-center justify-center mx-auto">
+                <ShoppingBag className="w-8 h-8" />
+              </div>
+              <h3 className="font-serif font-bold text-2xl text-[#2D2D2D]">Catalog is Empty</h3>
+              <p className="text-xs text-[#6B655B] leading-relaxed max-w-sm mx-auto">
+                All pre-uploaded dresses and clothes have been removed. You can upload new garments, silk kurtas, and custom pret collections anytime using the Admin Portal.
+              </p>
+              <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button
+                  id="empty-state-open-admin-btn"
+                  onClick={() => setIsAdminOpen(true)}
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-[#354024] hover:bg-[#28321B] text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2"
+                >
+                  <PlusCircle className="w-4 h-4 text-[#8A9A5B]" />
+                  <span>Upload New Clothes in Admin Portal</span>
+                </button>
+              </div>
+            </div>
+          ) : filteredProducts.length === 0 ? (
             <div className="bg-[#FAF7F2] rounded-3xl p-12 text-center border border-[#E8E2D8] shadow-xs space-y-4 max-w-lg mx-auto my-8">
               <div className="w-16 h-16 rounded-full bg-[#EFE9DF] text-[#8A9A5B] flex items-center justify-center mx-auto">
                 <Search className="w-8 h-8" />
@@ -507,6 +635,28 @@ export default function App() {
           isWishlisted={wishlistIds.includes(selectedProduct.id)}
           onToggleWishlist={handleToggleWishlist}
           onAddToCart={handleAddToCart}
+          onBuyNowWithGooglePay={(p, size, color, quantity) => {
+            const directItem: CartItem = {
+              id: `${p.id}-${size}-${color.name}-${Date.now()}`,
+              productId: p.id,
+              name: p.name,
+              price: p.price,
+              originalPrice: p.originalPrice,
+              image_url: p.image_url,
+              selectedSize: size,
+              selectedColor: color,
+              qty: quantity,
+              maxStock: p.stock,
+              category: p.category,
+            };
+            handleAddToCart(p, size, color, quantity);
+            setDirectCheckoutItems([directItem]);
+            setSelectedProduct(null);
+            setCheckoutPaymentMethod('googlepay');
+            setCheckoutStep(3);
+            setAutoOpenGooglePay(true);
+            setIsCheckoutOpen(true);
+          }}
           onClose={() => setSelectedProduct(null)}
           onOpenSizeGuide={() => setIsSizeGuideOpen(true)}
           reviews={reviewsMap[selectedProduct.id] || []}
@@ -525,6 +675,18 @@ export default function App() {
         onClearCart={() => setCart([])}
         currency={currency}
         onProceedToCheckout={() => {
+          setDirectCheckoutItems(null);
+          setCheckoutPaymentMethod('googlepay');
+          setCheckoutStep(1);
+          setAutoOpenGooglePay(false);
+          setIsCartOpen(false);
+          setIsCheckoutOpen(true);
+        }}
+        onGooglePayCheckout={() => {
+          setDirectCheckoutItems(null);
+          setCheckoutPaymentMethod('googlepay');
+          setCheckoutStep(3);
+          setAutoOpenGooglePay(true);
           setIsCartOpen(false);
           setIsCheckoutOpen(true);
         }}
@@ -548,12 +710,24 @@ export default function App() {
       {/* Checkout Modal */}
       <CheckoutModal
         isOpen={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
+        onClose={() => {
+          setIsCheckoutOpen(false);
+          setAutoOpenGooglePay(false);
+          setDirectCheckoutItems(null);
+        }}
         cart={cart}
+        directItems={directCheckoutItems || undefined}
+        autoOpenGooglePaySheet={autoOpenGooglePay}
         currency={currency}
         currentUser={currentUser}
         appliedCoupon={appliedCoupon}
-        onOrderPlaced={handleOrderPlaced}
+        initialPaymentMethod={checkoutPaymentMethod}
+        initialStep={checkoutStep}
+        onOrderPlaced={(order) => {
+          handleOrderPlaced(order);
+          setDirectCheckoutItems(null);
+          setAutoOpenGooglePay(false);
+        }}
       />
 
       {/* Admin Portal Modal */}
@@ -565,6 +739,7 @@ export default function App() {
         onAddProduct={handleAddProduct}
         onUpdateProduct={handleUpdateProduct}
         onDeleteProduct={handleDeleteProduct}
+        onClearAllProducts={handleClearAllProducts}
         onResetCatalog={handleResetCatalog}
         onUpdateOrderStatus={handleUpdateOrderStatus}
         currency={currency}
@@ -592,11 +767,18 @@ export default function App() {
           onClose={() => setIsAccountOpen(false)}
           user={currentUser}
           orders={orders}
-          onLogout={() => {
+          onLogout={async () => {
+            await logOut();
             setCurrentUser(null);
             setIsAdminUnlocked(false);
           }}
           currency={currency}
+          onUpdateUser={async (updated) => {
+            setCurrentUser(updated);
+            if (updated.id) {
+              await updateUserProfile(updated.id, updated);
+            }
+          }}
         />
       )}
 

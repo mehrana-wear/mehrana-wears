@@ -38,11 +38,11 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({ isOpen, onClose 
         </div>
 
         {/* Category & Unit Selectors */}
-        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4 pb-2">
-          <div className="flex bg-[#FAF7F2] border border-[#E8E2D8] p-1 rounded-xl w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 pt-4 pb-2">
+          <div className="flex bg-[#FAF7F2] border border-[#E8E2D8] p-1 rounded-xl w-full sm:w-auto overflow-x-auto no-scrollbar">
             <button
               onClick={() => setGuideCategory('women')}
-              className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+              className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap shrink-0 ${
                 guideCategory === 'women' ? 'bg-[#3F4C27] text-white shadow-xs' : 'text-[#5F584E] hover:text-[#2D2D2D]'
               }`}
             >
@@ -50,7 +50,7 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({ isOpen, onClose 
             </button>
             <button
               onClick={() => setGuideCategory('men')}
-              className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+              className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap shrink-0 ${
                 guideCategory === 'men' ? 'bg-[#3F4C27] text-white shadow-xs' : 'text-[#5F584E] hover:text-[#2D2D2D]'
               }`}
             >
@@ -58,7 +58,7 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({ isOpen, onClose 
             </button>
             <button
               onClick={() => setGuideCategory('modest')}
-              className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+              className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap shrink-0 ${
                 guideCategory === 'modest' ? 'bg-[#3F4C27] text-white shadow-xs' : 'text-[#5F584E] hover:text-[#2D2D2D]'
               }`}
             >
@@ -66,7 +66,7 @@ export const SizeGuideModal: React.FC<SizeGuideModalProps> = ({ isOpen, onClose 
             </button>
             <button
               onClick={() => setGuideCategory('kids')}
-              className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+              className={`flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition whitespace-nowrap shrink-0 ${
                 guideCategory === 'kids' ? 'bg-[#3F4C27] text-white shadow-xs' : 'text-[#5F584E] hover:text-[#2D2D2D]'
               }`}
             >

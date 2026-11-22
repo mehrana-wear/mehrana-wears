@@ -1,0 +1,81 @@
+import React from 'react';
+import logoImage from '../assets/images/mehrana_wear_logo_1788103006237.jpg';
+
+interface BrandLogoProps {
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  variant?: 'light' | 'dark' | 'auto';
+  showText?: boolean;
+  className?: string;
+}
+
+export const BrandLogo: React.FC<BrandLogoProps> = ({
+  size = 'md',
+  variant = 'auto',
+  showText = true,
+  className = '',
+}) => {
+  const sizeMap = {
+    sm: {
+      img: 'w-8 h-8',
+      title: 'text-lg',
+      subtitle: 'text-[8px]',
+      gap: 'gap-2',
+    },
+    md: {
+      img: 'w-8 h-8 sm:w-11 sm:h-11',
+      title: 'text-base sm:text-[26px]',
+      subtitle: 'text-[7px] sm:text-[9px]',
+      gap: 'gap-2 sm:gap-3',
+    },
+    lg: {
+      img: 'w-14 h-14',
+      title: 'text-3xl',
+      subtitle: 'text-[10px]',
+      gap: 'gap-3.5',
+    },
+    xl: {
+      img: 'w-20 h-20',
+      title: 'text-4xl',
+      subtitle: 'text-xs',
+      gap: 'gap-4',
+    },
+  };
+
+  const currentSize = sizeMap[size];
+
+  return (
+    <div className={`flex items-center ${currentSize.gap} select-none ${className}`}>
+      {/* Brand Emblem Image */}
+      <div 
+        className={`${currentSize.img} rounded-xl overflow-hidden shrink-0 shadow-xs border border-[#8A9A5B]/30 bg-[#FAF7F2] transition-transform duration-300 group-hover:scale-105 flex items-center justify-center p-0.5`}
+      >
+        <img
+          src={logoImage}
+          alt="Mehrana wear official logo"
+          referrerPolicy="no-referrer"
+          className="w-full h-full object-contain rounded-lg"
+        />
+      </div>
+
+      {/* Brand Typographic Identity */}
+      {showText && (
+        <div className="flex flex-col justify-center">
+          <span 
+            className={`font-serif font-bold tracking-tight leading-none ${
+              variant === 'light' 
+                ? 'text-[#FDFBF7]' 
+                : variant === 'dark' 
+                ? 'text-[#2D2D2D]' 
+                : 'text-[#2D2D2D] dark:text-[#FDFBF7]'
+            } ${currentSize.title}`}
+          >
+            Mehrana <span className="font-normal lowercase text-[#8A9A5B]">wear</span>
+          </span>
+          <span className={`${currentSize.subtitle} tracking-[0.14em] sm:tracking-[0.22em] font-semibold text-[#8A9A5B] uppercase block mt-0.5 sm:mt-1 whitespace-nowrap`}>
+            Kaftan & Luxury Pret
+          </span>
+        </div>
+      )}
+    </div>
+  );
+};

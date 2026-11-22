@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Product, CurrencyCode, Review, User } from '../types';
 import { formatPrice } from '../utils/currency';
+import { GooglePayButton } from './GooglePaySheet';
 
 interface ProductDetailModalProps {
   product: Product;
@@ -22,6 +23,7 @@ interface ProductDetailModalProps {
   isWishlisted: boolean;
   onToggleWishlist: (product: Product) => void;
   onAddToCart: (product: Product, size: string, color: { name: string; hex: string }, qty: number) => void;
+  onBuyNowWithGooglePay?: (product: Product, size: string, color: { name: string; hex: string }, qty: number) => void;
   onClose: () => void;
   onOpenSizeGuide: () => void;
   reviews: Review[];
@@ -35,6 +37,7 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
   isWishlisted,
   onToggleWishlist,
   onAddToCart,
+  onBuyNowWithGooglePay,
   onClose,
   onOpenSizeGuide,
   reviews,
@@ -298,32 +301,45 @@ export const ProductDetailModal: React.FC<ProductDetailModalProps> = ({
                 </div>
 
                 {/* Add to Bag Primary Action */}
-                <button
-                  id="modal-add-to-bag-btn"
-                  onClick={handleAddToCart}
-                  disabled={product.stock <= 0}
-                  className={`w-full py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all ${
-                    isAdded
-                      ? 'bg-[#3F4C27] text-white'
-                      : product.stock <= 0
-                      ? 'bg-[#EFE9DF] text-[#A68F7A] cursor-not-allowed'
-                      : 'bg-[#C17F59] hover:bg-[#A86A46] text-white hover:shadow-xl'
-                  }`}
-                >
-                  {isAdded ? (
-                    <>
-                      <Check className="w-5 h-5 text-white" />
-                      <span>Added to Shopping Bag!</span>
-                    </>
-                  ) : product.stock <= 0 ? (
-                    <span>Currently Sold Out</span>
-                  ) : (
-                    <>
-                      <ShoppingBag className="w-5 h-5 text-[#FAF7F2]" />
-                      <span>Add to Bag • {formatPrice(product.price * qty, currency)}</span>
-                    </>
+                <div className="space-y-2.5">
+                  <button
+                    id="modal-add-to-bag-btn"
+                    onClick={handleAddToCart}
+                    disabled={product.stock <= 0}
+                    className={`w-full py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 shadow-md transition-all ${
+                      isAdded
+                        ? 'bg-[#3F4C27] text-white'
+                        : product.stock <= 0
+                        ? 'bg-[#EFE9DF] text-[#A68F7A] cursor-not-allowed'
+                        : 'bg-[#C17F59] hover:bg-[#A86A46] text-white hover:shadow-lg'
+                    }`}
+                  >
+                    {isAdded ? (
+                      <>
+                        <Check className="w-5 h-5 text-white" />
+                        <span>Added to Shopping Bag!</span>
+                      </>
+                    ) : product.stock <= 0 ? (
+                      <span>Currently Sold Out</span>
+                    ) : (
+                      <>
+                        <ShoppingBag className="w-4 h-4 text-[#FAF7F2]" />
+                        <span>Add to Bag • {formatPrice(product.price * qty, currency)}</span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* 1-Click Buy with Google Pay */}
+                  {product.stock > 0 && onBuyNowWithGooglePay && (
+                    <GooglePayButton
+                      onClick={() => onBuyNowWithGooglePay(product, selectedSize, selectedColor, qty)}
+                      total={product.price * qty}
+                      currency={currency}
+                      variant="buy"
+                      className="w-full"
+                    />
                   )}
-                </button>
+                </div>
 
                 {/* Value Markers */}
                 <div className="grid grid-cols-2 gap-2 pt-2 text-[11px] text-[#6B655B]">
