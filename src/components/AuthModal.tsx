@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { X, Lock, Mail, User as UserIcon, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
+import { X, Lock, Mail, User as UserIcon, AlertCircle, Loader2, CheckCircle2, Copy, Check, ExternalLink } from 'lucide-react';
 import { User } from '../types';
-import { logInWithGoogle, logInWithEmail, signUpWithEmail } from '../lib/firebase';
+import { logInWithGoogle, logInWithEmail, signUpWithEmail, FIREBASE_PROJECT_ID } from '../lib/firebase';
 import { BrandLogo } from './BrandLogo';
 
 interface AuthModalProps {
@@ -18,12 +18,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unauthorizedDomain, setUnauthorizedDomain] = useState<string | null>(null);
+  const [copiedDomain, setCopiedDomain] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
+  const handleCopyDomain = () => {
+    if (!unauthorizedDomain) return;
+    navigator.clipboard?.writeText(unauthorizedDomain);
+    setCopiedDomain(true);
+    setTimeout(() => setCopiedDomain(false), 2000);
+  };
+
   const handleGoogleSignIn = async () => {
     setError(null);
+    setUnauthorizedDomain(null);
     setIsGoogleLoading(true);
     try {
       const user = await logInWithGoogle();
@@ -35,6 +45,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }
       }, 500);
     } catch (err: any) {
       console.error('Google Sign In failed', err);
+      if (err?.code === 'auth/unauthorized-domain' || String(err?.message || '').includes('unauthorized-domain')) {
+        const host = err?.hostname || (typeof window !== 'undefined' ? window.location.hostname : '');
+        setUnauthorizedDomain(host || 'your-domain.github.io');
+      }
       setError(err.message || 'Google Sign-In could not be completed.');
       setIsGoogleLoading(false);
     }
@@ -43,6 +57,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setUnauthorizedDomain(null);
 
     if (mode === 'signup' && !name.trim()) {
       setError('Please enter your full name.');
@@ -114,9 +129,39 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onLogin }
 
         {/* Error Alert */}
         {error && (
-          <div className="mb-4 p-3 bg-[#FAF0EB] border border-[#C17F59]/30 text-[#C17F59] rounded-2xl text-xs flex items-start gap-2 animate-in fade-in">
-            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-            <span className="font-medium">{error}</span>
+          <div className="mb-4 p-3 bg-[#FAF0EB] border border-[#C17F59]/30 text-[#C17F59] rounded-2xl text-xs space-y-2 animate-in fade-in">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+              <span className="font-medium leading-relaxed">{error}</span>
+            </div>
+            {unauthorizedDomain && (
+              <div className="bg-white/90 border border-[#E8E2D8] rounded-xl p-2.5 text-[#2D2D2D] space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <code className="text-[11px] font-mono bg-[#FAF7F2] px-2 py-1 rounded-lg border border-[#E8E2D8] truncate">
+                    {unauthorizedDomain}
+                  </code>
+                  <button
+                    type="button"
+                    onClick={handleCopyDomain}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#3F4C27] text-white text-[10px] font-bold hover:bg-[#323D1F] transition shrink-0"
+                  >
+                    {copiedDomain ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                    <span>{copiedDomain ? 'Copied' : 'Copy'}</span>
+                  </button>
+                </div>
+                <div className="flex items-center justify-between gap-2 text-[11px]">
+                  <a
+                    href={`https://console.firebase.google.com/project/${FIREBASE_PROJECT_ID}/authentication/settings`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 font-bold text-[#3F4C27] hover:underline"
+                  >
+                    <span>Open Firebase Authorized Domains</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

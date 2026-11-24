@@ -30,6 +30,7 @@ import { User, Product, Order, Review } from '../types';
 
 // Initialize Firebase App singleton
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+export const FIREBASE_PROJECT_ID = firebaseConfig.projectId;
 
 // Authentication Instance
 export const auth = getAuth(app);
@@ -147,12 +148,22 @@ export async function logInWithGoogle(): Promise<User> {
   } catch (error: any) {
     console.error('Google Sign In Error:', error);
     const authError = error as AuthError;
-    if (authError.code === 'auth/popup-closed-by-user') {
+    if (authError.code === 'auth/unauthorized-domain') {
+      const host = typeof window !== 'undefined' ? window.location.hostname : 'this domain';
+      const domainError = new Error(
+        `Domain "${host}" is not yet authorized in Firebase Authentication. Add "${host}" under Firebase Console → Authentication → Settings → Authorized domains.`
+      ) as Error & { code?: string; hostname?: string };
+      domainError.code = 'auth/unauthorized-domain';
+      domainError.hostname = host;
+      throw domainError;
+    } else if (authError.code === 'auth/popup-closed-by-user') {
       throw new Error('Google sign-in popup was closed before completing.');
     } else if (authError.code === 'auth/popup-blocked') {
       throw new Error('Sign-in popup was blocked by browser. Please allow popups for this page.');
     } else if (authError.code === 'auth/cancelled-popup-request') {
       throw new Error('Popup request was superseded.');
+    } else if (authError.code === 'auth/network-request-failed') {
+      throw new Error('Network error while connecting to Google Sign-In. Please check your connection and try again.');
     }
     throw new Error(authError.message || 'Failed to sign in with Google.');
   }
