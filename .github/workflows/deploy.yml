@@ -27,7 +27,9 @@ jobs:
       - name: Install dependencies
         run: npm install
       - name: Build
-        run: npm run build
+        run: |
+          npm run build
+          if [ -f CNAME ]; then cp CNAME dist/CNAME; fi
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

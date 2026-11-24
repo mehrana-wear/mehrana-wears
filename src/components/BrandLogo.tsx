@@ -1,5 +1,6 @@
 import React from 'react';
-import logoImage from '../assets/images/mehrana_wear_logo_1788103006237.jpg';
+
+const LOGO_SRC = './assets/aistudio/IMG-20261122-WA0059_aa018b10.jpg';
 
 interface BrandLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -50,7 +51,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
         className={`${currentSize.img} rounded-xl overflow-hidden shrink-0 shadow-xs border border-[#8A9A5B]/30 bg-[#FAF7F2] transition-transform duration-300 group-hover:scale-105 flex items-center justify-center p-0.5`}
       >
         <img
-          src={logoImage}
+          src={LOGO_SRC}
           alt="Mehrana wear official logo"
           referrerPolicy="no-referrer"
           className="w-full h-full object-contain rounded-lg"
