@@ -1,6 +1,6 @@
 import React from 'react';
 
-const LOGO_SRC = './assets/logo-bold.png';
+const LOGO_SRC = './assets/aistudio/WhatsApp_Image_2026-11-25_at_01.24.40_6db6318f.jpeg';
 
 interface BrandLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
@@ -17,25 +17,25 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
 }) => {
   const sizeMap = {
     sm: {
-      img: 'w-10 h-10',
+      img: 'w-8 h-8',
       title: 'text-lg',
       subtitle: 'text-[8px]',
       gap: 'gap-2',
     },
     md: {
-      img: 'w-11 h-11 sm:w-14 sm:h-14',
-      title: 'text-lg sm:text-[28px]',
-      subtitle: 'text-[8px] sm:text-[10px]',
-      gap: 'gap-2.5 sm:gap-3.5',
+      img: 'w-8 h-8 sm:w-11 sm:h-11',
+      title: 'text-base sm:text-[26px]',
+      subtitle: 'text-[7px] sm:text-[9px]',
+      gap: 'gap-2 sm:gap-3',
     },
     lg: {
-      img: 'w-20 h-20',
+      img: 'w-14 h-14',
       title: 'text-3xl',
       subtitle: 'text-[10px]',
       gap: 'gap-3.5',
     },
     xl: {
-      img: 'w-28 h-28',
+      img: 'w-20 h-20',
       title: 'text-4xl',
       subtitle: 'text-xs',
       gap: 'gap-4',
@@ -44,21 +44,17 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
 
   const currentSize = sizeMap[size];
 
-  const isLightText = variant === 'light';
-
   return (
     <div className={`flex items-center ${currentSize.gap} select-none ${className}`}>
       {/* Brand Emblem Image */}
       <div 
-        className={`${currentSize.img} rounded-xl overflow-hidden shrink-0 shadow-sm border ${
-          isLightText ? 'border-[#C5D1A5]/40' : 'border-[#2D3B26]/25'
-        } bg-[#FAF6EE] transition-transform duration-300 group-hover:scale-105 flex items-center justify-center`}
+        className={`${currentSize.img} rounded-xl overflow-hidden shrink-0 shadow-xs border border-[#8A9A5B]/30 bg-[#FAF7F2] transition-transform duration-300 group-hover:scale-105 flex items-center justify-center p-0.5`}
       >
         <img
           src={LOGO_SRC}
           alt="Mehrana wear official logo"
           referrerPolicy="no-referrer"
-          className="w-full h-full object-contain"
+          className="w-full h-full object-contain rounded-lg"
         />
       </div>
 
@@ -67,27 +63,16 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
         <div className="flex flex-col justify-center">
           <span 
             className={`font-serif font-bold tracking-tight leading-none ${
-              isLightText
+              variant === 'light' 
                 ? 'text-[#FDFBF7]' 
                 : variant === 'dark' 
-                ? 'text-[#1E1E1E]' 
-                : 'text-[#1E1E1E] dark:text-[#FDFBF7]'
+                ? 'text-[#2D2D2D]' 
+                : 'text-[#2D2D2D] dark:text-[#FDFBF7]'
             } ${currentSize.title}`}
           >
-            Mehrana{' '}
-            <span
-              className={`font-medium lowercase ${
-                isLightText ? 'text-[#C5D1A5]' : 'text-[#4F602F]'
-              }`}
-            >
-              wear
-            </span>
+            Mehrana <span className="font-normal lowercase text-[#8A9A5B]">wear</span>
           </span>
-          <span
-            className={`${currentSize.subtitle} tracking-[0.14em] sm:tracking-[0.22em] font-bold uppercase block mt-0.5 sm:mt-1 whitespace-nowrap ${
-              isLightText ? 'text-[#C5D1A5]' : 'text-[#4F602F]'
-            }`}
-          >
+          <span className={`${currentSize.subtitle} tracking-[0.14em] sm:tracking-[0.22em] font-semibold text-[#8A9A5B] uppercase block mt-0.5 sm:mt-1 whitespace-nowrap`}>
             Kaftan & Luxury Pret
           </span>
         </div>
