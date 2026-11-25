@@ -17,25 +17,25 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
 }) => {
   const sizeMap = {
     sm: {
-      img: 'w-8 h-8',
+      img: 'w-9 h-9',
       title: 'text-lg',
       subtitle: 'text-[8px]',
       gap: 'gap-2',
     },
     md: {
-      img: 'w-8 h-8 sm:w-11 sm:h-11',
+      img: 'w-9 h-9 sm:w-12 sm:h-12',
       title: 'text-base sm:text-[26px]',
       subtitle: 'text-[7px] sm:text-[9px]',
       gap: 'gap-2 sm:gap-3',
     },
     lg: {
-      img: 'w-14 h-14',
+      img: 'w-16 h-16',
       title: 'text-3xl',
       subtitle: 'text-[10px]',
       gap: 'gap-3.5',
     },
     xl: {
-      img: 'w-20 h-20',
+      img: 'w-24 h-24',
       title: 'text-4xl',
       subtitle: 'text-xs',
       gap: 'gap-4',
@@ -48,7 +48,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
     <div className={`flex items-center ${currentSize.gap} select-none ${className}`}>
       {/* Brand Emblem Image */}
       <div 
-        className={`${currentSize.img} rounded-xl overflow-hidden shrink-0 shadow-xs border border-[#8A9A5B]/30 bg-[#FAF7F2] transition-transform duration-300 group-hover:scale-105 flex items-center justify-center p-0.5`}
+        className={`${currentSize.img} rounded-xl overflow-hidden shrink-0 shadow-xs border border-[#8A9A5B]/30 bg-[#FAF6EE] transition-transform duration-300 group-hover:scale-105 flex items-center justify-center p-0.5`}
       >
         <img
           src={LOGO_SRC}
