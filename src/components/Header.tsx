@@ -115,6 +115,23 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
 
+            {/* Wishlist Button (moved to top utility bar for cleaner logo space) */}
+            <button
+              id="header-wishlist-btn"
+              onClick={onOpenWishlist}
+              className="relative flex items-center gap-1 text-[10px] sm:text-[11px] font-medium px-2 sm:px-2.5 py-0.5 rounded-md text-[#FDFBF7] hover:text-white bg-[#45532F]/60 hover:bg-[#45532F] transition-all"
+              title="Wishlist"
+              aria-label="View Wishlist"
+            >
+              <Heart className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#C17F59] fill-[#C17F59]/30 shrink-0" />
+              <span>Wishlist</span>
+              {wishlistCount > 0 && (
+                <span className="bg-[#C17F59] text-white text-[9px] sm:text-[10px] font-bold px-1.5 py-0.2 rounded-full leading-tight">
+                  {wishlistCount}
+                </span>
+              )}
+            </button>
+
             {/* Quick Admin Portal Button */}
             <button
               id="header-admin-portal-btn"
@@ -179,23 +196,8 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
 
-          {/* Action Icons (All Visible on Mobile & Desktop) */}
-          <div className="flex items-center gap-1 sm:gap-3 shrink-0">
-            {/* Wishlist Button */}
-            <button
-              id="header-wishlist-btn"
-              onClick={onOpenWishlist}
-              className="relative p-1.5 sm:p-2.5 rounded-full text-[#5F584E] hover:text-[#C17F59] hover:bg-[#FAF0EB] transition-colors"
-              title="Wishlist"
-              aria-label="View Wishlist"
-            >
-              <Heart className="w-5 h-5" />
-              {wishlistCount > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 sm:top-1 sm:right-1 w-4 h-4 sm:w-5 sm:h-5 bg-[#C17F59] text-white rounded-full text-[10px] sm:text-[11px] font-bold flex items-center justify-center shadow-xs animate-scale">
-                  {wishlistCount}
-                </span>
-              )}
-            </button>
+          {/* Action Icons (Bag & Account cleanly separated from brand logo) */}
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
 
             {/* Shopping Cart Button */}
             <button
@@ -348,6 +350,17 @@ export const Header: React.FC<HeaderProps> = ({
                 <span>My Account & Orders</span>
               </button>
             )}
+
+            <button
+              onClick={() => {
+                onOpenWishlist();
+                setMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center justify-center gap-2 bg-[#FAF0EB] text-[#9E5F3B] border border-[#C17F59]/30 py-2 rounded-xl font-medium text-xs"
+            >
+              <Heart className="w-4 h-4 text-[#C17F59]" />
+              <span>Saved Wishlist ({wishlistCount})</span>
+            </button>
 
             <button
               onClick={() => {
