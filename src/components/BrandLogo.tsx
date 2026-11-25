@@ -1,6 +1,6 @@
 import React from 'react';
 
-const LOGO_SRC = './assets/aistudio/IMG-20261122-WA0059_aa018b10.jpg';
+const LOGO_SRC = './assets/aistudio/WhatsApp_Image_2026-11-25_at_01.24.40_6db6318f.jpeg';
 
 interface BrandLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
